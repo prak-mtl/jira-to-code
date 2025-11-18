@@ -1,0 +1,180 @@
+import google.generativeai as genai
+from typing import Dict, Any, List
+import os
+from datetime import datetime
+import re
+
+class PlannerAI:
+    """
+    Planner AI Persona - Creates detailed implementation plans
+    from architecture design.
+    """
+    
+    def __init__(self):
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable not set")
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('models/gemini-2.5-flash')
+        self.fallback_model = genai.GenerativeModel('models/gemini-1.5-flash')  # Lighter fallback
+        self.persona_version = "v1.0.0"
+        
+    def create_implementation_plan(
+        self, 
+        requirements: str, 
+        architecture: str,
+        context: Dict[str, Any] = None
+    ) -> str:
+        """
+        Generate IMPLEMENTATION_PLAN.md from requirements and architecture
+        
+        Args:
+            requirements: FEATURE_REQUIREMENTS.md content
+            architecture: SYSTEM_DESIGN.md content
+            context: Project context
+        
+        Returns:
+            Formatted IMPLEMENTATION_PLAN.md content
+        """
+        
+        prompt = f"""
+You are a Planner AI persona (v{self.persona_version}) - an expert Technical Project Manager 
+and Implementation Planner.
+
+Your task is to create a detailed IMPLEMENTATION_PLAN.md from the requirements and architecture 
+documents following this structure:
+
+## Required Sections:
+
+1. **Executive Summary**
+   - Business objective
+   - Technical scope
+   - Implementation approach
+
+2. **Architecture & Requirements Analysis**
+   - Requirements summary
+   - Architecture summary
+   - Complexity assessment
+
+3. **Meaningful Implementation Tasks**
+   For each task (4-6 substantial tasks only, NO micro-tasks):
+   - **Task Name**: Clear, action-oriented name
+   - **Business Value**: Why this task matters
+   - **Implementation Details**: What needs to be built
+   - **Technical Approach**: How to implement it
+   - **Dependencies**: What this task depends on
+   - **Testing Strategy**: How to validate it
+   - **Acceptance Criteria**: Definition of done
+
+4. **Implementation Priority Matrix**
+   | Task | Business Impact | Technical Risk | Effort | Priority |
+   |------|----------------|----------------|--------|----------|
+
+5. **Implementation Workflow**
+   - Task dependencies
+   - Phase 1: Core development
+   - Phase 2: Integration
+   - Phase 3: Testing
+
+6. **Success Criteria**
+   - Functional success criteria
+   - Technical success criteria
+   - Quality criteria
+
+## Important Guidelines:
+- Create 4-6 MEANINGFUL tasks (substantial development work)
+- NO micro-tasks like "write tests", "update docs", "code review"
+- Each task should represent 2-8 hours of development work
+- Focus on implementation-ready, actionable tasks
+
+## Context:
+{f"Project Context: {context}" if context else "No additional context provided"}
+
+## Requirements Document (excerpt):
+{requirements[:1000]}...
+
+## Architecture Document (excerpt):
+{architecture[:1000]}...
+
+Generate a detailed, actionable IMPLEMENTATION_PLAN.md.
+Keep the response focused and concise.
+"""
+
+        # Configure generation settings
+        generation_config = {
+            'temperature': 0.7,
+            'top_p': 0.95,
+            'top_k': 40,
+            'max_output_tokens': 4096,
+        }
+
+        # Try primary model, fallback to lighter model if overloaded
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=generation_config
+            )
+        except Exception as e:
+            error_str = str(e).lower()
+            if "503" in str(e) or "overloaded" in error_str or "unavailable" in error_str:
+                print("   ⚠️  Primary model overloaded, trying fallback model (gemini-1.5-flash)...")
+                response = self.fallback_model.generate_content(
+                    prompt,
+                    generation_config=generation_config
+                )
+            else:
+                raise
+
+        # Handle multi-part responses
+        try:
+            output = response.text.strip()
+        except ValueError:
+            # Response has multiple parts, concatenate them
+            output = ""
+            for candidate in response.candidates:
+                for part in candidate.content.parts:
+                    if hasattr(part, 'text'):
+                        output += part.text
+            output = output.strip()
+
+        # Strip markdown code fences if present
+        if output.startswith('```markdown'):
+            output = output[len('```markdown'):].strip()
+        if output.startswith('```'):
+            output = output[3:].strip()
+        if output.endswith('```'):
+            output = output[:-3].strip()
+
+        # Add AI generation footprint
+        output += f"\n\n---\n\n## AI Generation Footprint\n\n"
+        output += f"**Generated By**: Planner AI\n\n"
+        output += f"**Framework Version**: {self.persona_version}\n\n"
+        output += f"**Generation Date**: {datetime.utcnow().isoformat()} UTC\n\n"
+        output += f"**Planning Status**: ✅ COMPLETE\n\n"
+        output += f"---\n\n"
+        output += f"Co-authored by Planner AI using Persona-Driven AI Framework {self.persona_version}\n"
+        
+        return output
+    
+    def extract_tasks(self, plan: str) -> List[Dict[str, str]]:
+        """Extract individual tasks from implementation plan"""
+        tasks = []
+        lines = plan.split('\n')
+        current_task = None
+        
+        for line in lines:
+            if line.startswith('### Task') or line.startswith('## Task'):
+                if current_task:
+                    tasks.append(current_task)
+                current_task = {"name": line.replace('###', '').replace('##', '').replace('Task', '').strip()}
+            elif current_task:
+                if '**Business Value**:' in line:
+                    current_task['business_value'] = line.split('**Business Value**:')[1].strip()
+                elif '**Priority**:' in line:
+                    current_task['priority'] = line.split('**Priority**:')[1].strip()
+        
+        if current_task:
+            tasks.append(current_task)
+        
+        return tasks
+

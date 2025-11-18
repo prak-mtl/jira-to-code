@@ -1,0 +1,394 @@
+service: developer-productivity-dashboard
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  
+  environment:
+    STAGE: ${self:provider.stage}
+    METRICS_TABLE_NAME: ${self:custom.metricsTableName}
+    RAW_EVENTS_TABLE_NAME: ${self:custom.rawEventsTableName}
+    SPRINTS_TABLE_NAME: ${self:custom.sprintsTableName}
+    USERS_TABLE_NAME: ${self:custom.usersTableName}
+    AI_INSIGHTS_TABLE_NAME: ${self:custom.aiInsightsTableName}
+    GITHUB_CLIENT_ID: ${env:GITHUB_CLIENT_ID}
+    GITHUB_CLIENT_SECRET: ${env:GITHUB_CLIENT_SECRET}
+    GITLAB_CLIENT_ID: ${env:GITLAB_CLIENT_ID}
+    GITLAB_CLIENT_SECRET: ${env:GITLAB_CLIENT_SECRET}
+    GEMINI_API_KEY: ${env:GEMINI_API_KEY}
+    JWT_SECRET: ${env:JWT_SECRET}
+    
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - !GetAtt MetricsTable.Arn
+            - !GetAtt RawEventsTable.Arn
+            - !GetAtt SprintsTable.Arn
+            - !GetAtt UsersTable.Arn
+            - !GetAtt AIInsightsTable.Arn
+            - !Sub '${MetricsTable.Arn}/index/*'
+            - !Sub '${RawEventsTable.Arn}/index/*'
+            - !Sub '${SprintsTable.Arn}/index/*'
+            - !Sub '${UsersTable.Arn}/index/*'
+            - !Sub '${AIInsightsTable.Arn}/index/*'
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt EventQueue.Arn
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource:
+            - !Sub '${RawEventsBucket.Arn}/*'
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+custom:
+  metricsTableName: DeveloperProductivityMetrics-${self:provider.stage}
+  rawEventsTableName: DeveloperProductivityRawEvents-${self:provider.stage}
+  sprintsTableName: DeveloperProductivitySprints-${self:provider.stage}
+  usersTableName: DeveloperProductivityUsers-${self:provider.stage}
+  aiInsightsTableName: DeveloperProductivityAIInsights-${self:provider.stage}
+  
+  pythonRequirements:
+    dockerizePip: true
+    layer: true
+
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+
+functions:
+  # API Gateway Functions
+  api:
+    handler: app.main.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    environment:
+      LOG_LEVEL: INFO
+
+  # Webhook Receivers
+  githubWebhook:
+    handler: ingestor_lambda.handler.github_webhook
+    events:
+      - httpApi:
+          path: /webhooks/github
+          method: POST
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+
+  gitlabWebhook:
+    handler: ingestor_lambda.handler.gitlab_webhook
+    events:
+      - httpApi:
+          path: /webhooks/gitlab
+          method: POST
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+
+  # Data Processing Functions
+  processEvents:
+    handler: processor_lambda.handler.process_event
+    events:
+      - sqs:
+          arn: !GetAtt EventQueue.Arn
+          batchSize: 10
+          maximumBatchingWindowInSeconds: 5
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    timeout: 60
+    reservedConcurrency: 10
+
+  # Scheduled Data Collection
+  pollGitHub:
+    handler: ingestor_lambda.handler.poll_github
+    events:
+      - schedule:
+          rate: rate(15 minutes)
+          enabled: true
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    timeout: 300
+
+  pollGitLab:
+    handler: ingestor_lambda.handler.poll_gitlab
+    events:
+      - schedule:
+          rate: rate(15 minutes)
+          enabled: true
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    timeout: 300
+
+  # AI Insights Generation
+  generateInsights:
+    handler: ai_lambda.handler.generate_insights
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    timeout: 120
+    memorySize: 1024
+
+resources:
+  Resources:
+    # SQS Queue for Event Processing
+    EventQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-events-${self:provider.stage}
+        VisibilityTimeout: 360
+        MessageRetentionPeriod: 1209600  # 14 days
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt EventDeadLetterQueue.Arn
+          maxReceiveCount: 3
+
+    EventDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-events-dlq-${self:provider.stage}
+        MessageRetentionPeriod: 1209600  # 14 days
+
+    # S3 Bucket for Raw Events Archive
+    RawEventsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-raw-events-${self:provider.stage}
+        LifecycleConfiguration:
+          Rules:
+            - Id: DeleteOldEvents
+              Status: Enabled
+              ExpirationInDays: 90
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+
+    # DynamoDB Tables (referenced from CloudFormation template)
+    MetricsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.metricsTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: metric_id
+            AttributeType: S
+          - AttributeName: source
+            AttributeType: S
+          - AttributeName: team_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: MetricIdIndex
+            KeySchema:
+              - AttributeName: metric_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: SourceIndex
+            KeySchema:
+              - AttributeName: source
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TeamIdIndex
+            KeySchema:
+              - AttributeName: team_id
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    RawEventsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.rawEventsTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: event_id
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: event_type
+            AttributeType: S
+          - AttributeName: repo_name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: event_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TimestampIndex
+            KeySchema:
+              - AttributeName: event_type
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: RepoIndex
+            KeySchema:
+              - AttributeName: repo_name
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
+    SprintsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.sprintsTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: sprint_id
+            AttributeType: S
+          - AttributeName: team_id
+            AttributeType: S
+          - AttributeName: start_date
+            AttributeType: S
+        KeySchema:
+          - AttributeName: sprint_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TeamIdIndex
+            KeySchema:
+              - AttributeName: team_id
+                KeyType: HASH
+              - AttributeName: start_date
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: team_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TeamIdIndex
+            KeySchema:
+              - AttributeName: team_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    AIInsightsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.aiInsightsTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: insight_id
+            AttributeType: S
+          - AttributeName: team_id
+            AttributeType: S
+          - AttributeName: generated_at
+            AttributeType: S
+          - AttributeName: category
+            AttributeType: S
+        KeySchema:
+          - AttributeName: insight_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TeamIdIndex
+            KeySchema:
+              - AttributeName: team_id
+                KeyType: HASH
+              - AttributeName: generated_at
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: CategoryIndex
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+              - AttributeName: generated_at
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+  Outputs:
+    ApiEndpoint:
+      Description: API Gateway endpoint URL
+      Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+    EventQueueUrl:
+      Description: SQS Queue URL for events
+      Value: !Ref EventQueue
+
+    RawEventsBucketName:
+      Description: S3 Bucket for raw events
+      Value: !Ref RawEventsBucket
+

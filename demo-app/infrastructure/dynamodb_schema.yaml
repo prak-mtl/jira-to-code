@@ -1,0 +1,255 @@
+# DynamoDB Table Schema for Developer Productivity Dashboard
+# CloudFormation Template
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB tables for Developer Productivity Dashboard'
+
+Resources:
+  # Main Metrics Table
+  MetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DeveloperProductivityMetrics
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: name
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: metric_id
+          AttributeType: S
+        - AttributeName: source
+          AttributeType: S
+        - AttributeName: team_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: name
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: MetricIdIndex
+          KeySchema:
+            - AttributeName: metric_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: SourceIndex
+          KeySchema:
+            - AttributeName: source
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TeamIdIndex
+          KeySchema:
+            - AttributeName: team_id
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: DeveloperProductivityDashboard
+        - Key: Environment
+          Value: Production
+
+  # Raw Events Table (for audit and reprocessing)
+  RawEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DeveloperProductivityRawEvents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: event_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: event_type
+          AttributeType: S
+        - AttributeName: repo_name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: event_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: TimestampIndex
+          KeySchema:
+            - AttributeName: event_type
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RepoIndex
+          KeySchema:
+            - AttributeName: repo_name
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      Tags:
+        - Key: Application
+          Value: DeveloperProductivityDashboard
+        - Key: Environment
+          Value: Production
+
+  # Sprints Table
+  SprintsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DeveloperProductivitySprints
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sprint_id
+          AttributeType: S
+        - AttributeName: team_id
+          AttributeType: S
+        - AttributeName: start_date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sprint_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: TeamIdIndex
+          KeySchema:
+            - AttributeName: team_id
+              KeyType: HASH
+            - AttributeName: start_date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Application
+          Value: DeveloperProductivityDashboard
+        - Key: Environment
+          Value: Production
+
+  # Users Table
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DeveloperProductivityUsers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: team_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TeamIdIndex
+          KeySchema:
+            - AttributeName: team_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Application
+          Value: DeveloperProductivityDashboard
+        - Key: Environment
+          Value: Production
+
+  # AI Insights Cache Table
+  AIInsightsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DeveloperProductivityAIInsights
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: insight_id
+          AttributeType: S
+        - AttributeName: team_id
+          AttributeType: S
+        - AttributeName: generated_at
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      KeySchema:
+        - AttributeName: insight_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: TeamIdIndex
+          KeySchema:
+            - AttributeName: team_id
+              KeyType: HASH
+            - AttributeName: generated_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: CategoryIndex
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: generated_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Application
+          Value: DeveloperProductivityDashboard
+        - Key: Environment
+          Value: Production
+
+Outputs:
+  MetricsTableName:
+    Description: Name of the Metrics DynamoDB table
+    Value: !Ref MetricsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-MetricsTable'
+
+  MetricsTableArn:
+    Description: ARN of the Metrics DynamoDB table
+    Value: !GetAtt MetricsTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MetricsTableArn'
+
+  RawEventsTableName:
+    Description: Name of the Raw Events DynamoDB table
+    Value: !Ref RawEventsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-RawEventsTable'
+
+  SprintsTableName:
+    Description: Name of the Sprints DynamoDB table
+    Value: !Ref SprintsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-SprintsTable'
+
+  UsersTableName:
+    Description: Name of the Users DynamoDB table
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub '${AWS::StackName}-UsersTable'
+
+  AIInsightsTableName:
+    Description: Name of the AI Insights DynamoDB table
+    Value: !Ref AIInsightsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-AIInsightsTable'
+
