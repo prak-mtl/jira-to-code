@@ -7,7 +7,7 @@ A full-stack web application that visualizes developer productivity metrics with
 ## 🌐 Live Demo
 
 **🎯 Try it now**: [https://dev-productivity-dashboard.vercel.app](https://dev-productivity-dashboard.vercel.app)
-**📚 API Documentation**: [Cloud Run API Docs](https://dev-productivity-api-xxxxx-ew.a.run.app/docs)
+**📚 API Documentation**: [Cloud Run API Docs](https://dev-productivity-api-meinl6j2jq-ew.a.run.app/)
 **💻 Source Code**: [GitHub Repository](https://github.com/prak-mtl/persona-framework)
 **📝 Blog Post**: [Read the full story on Medium](https://medium.com/@prakmtl)
 

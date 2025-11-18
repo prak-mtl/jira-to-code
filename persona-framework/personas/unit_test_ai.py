@@ -15,30 +15,36 @@ class UnitTestAI:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('models/gemini-2.5-flash')
+        self.fallback_model = genai.GenerativeModel('models/gemini-1.5-flash')  # Lighter fallback
         self.persona_version = "v1.0.0"
-        
+
     def generate_unit_tests(
-        self, 
-        code_files: Dict[str, str],
-        architecture: str,
+        self,
+        requirements: str = None,
+        architecture: str = None,
+        code_files: Dict[str, str] = None,
         coding_standards: str = None,
         test_framework: str = "pytest"
-    ) -> Dict[str, str]:
+    ) -> str:
         """
-        Generate comprehensive unit tests for code files
-        
+        Generate comprehensive unit tests and return a summary
+
         Args:
-            code_files: Dictionary of {filename: code_content}
+            requirements: FEATURE_REQUIREMENTS.md content (optional)
             architecture: SYSTEM_DESIGN.md content for context
+            code_files: Dictionary of {filename: code_content}
             coding_standards: Optional coding standards
             test_framework: Testing framework (pytest, jest, unittest)
-        
+
         Returns:
-            Dictionary of {test_filename: test_code}
+            TEST_SUMMARY.md content as a string
         """
-        
+
+        if not code_files:
+            return "No code files provided for test generation."
+
         test_files = {}
-        
+
         for filename, code in list(code_files.items())[:3]:  # Limit to first 3 files
             prompt = f"""
 You are a Unit Test AI persona (v{self.persona_version}) - an expert QA Engineer and Test Developer.
@@ -89,10 +95,22 @@ Keep the tests focused and concise.
                 'max_output_tokens': 4096,
             }
 
-            response = self.model.generate_content(
-                prompt,
-                generation_config=generation_config
-            )
+            # Try primary model, fallback to lighter model if overloaded
+            try:
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config=generation_config
+                )
+            except Exception as e:
+                error_str = str(e).lower()
+                if "503" in str(e) or "overloaded" in error_str or "unavailable" in error_str:
+                    print("   ⚠️  Primary model overloaded, trying fallback model (gemini-1.5-flash)...")
+                    response = self.fallback_model.generate_content(
+                        prompt,
+                        generation_config=generation_config
+                    )
+                else:
+                    raise
 
             # Handle multi-part responses
             try:
@@ -127,8 +145,9 @@ Keep the tests focused and concise.
                 test_filename = f"test_{filename}"
 
             test_files[test_filename] = test_code
-        
-        return test_files
+
+        # Generate and return test summary
+        return self.generate_test_summary(test_files)
     
     def generate_test_summary(self, test_files: Dict[str, str]) -> str:
         """Generate TEST_SUMMARY.md documenting test coverage"""
@@ -165,7 +184,16 @@ Generate a comprehensive TEST_SUMMARY.md document that includes:
 Generate a professional TEST_SUMMARY.md document.
 """
 
-        response = self.model.generate_content(prompt)
+        # Try primary model, fallback to lighter model if overloaded
+        try:
+            response = self.model.generate_content(prompt)
+        except Exception as e:
+            error_str = str(e).lower()
+            if "503" in str(e) or "overloaded" in error_str or "unavailable" in error_str:
+                print("   ⚠️  Primary model overloaded, trying fallback model (gemini-1.5-flash)...")
+                response = self.fallback_model.generate_content(prompt)
+            else:
+                raise
 
         # Handle multi-part responses
         try:

@@ -124,13 +124,123 @@ Keep the code focused and concise.
         
         return files
     
+    def generate_code_scaffolding(
+        self,
+        requirements: str,
+        architecture: str,
+        plan: str,
+        coding_standards: str = None
+    ) -> Dict[str, str]:
+        """
+        Generate code scaffolding from requirements, architecture, and plan
+
+        Args:
+            requirements: FEATURE_REQUIREMENTS.md content
+            architecture: SYSTEM_DESIGN.md content
+            plan: IMPLEMENTATION_PLAN.md content
+            coding_standards: Optional coding standards
+
+        Returns:
+            Dictionary of {filename: code_content}
+        """
+
+        prompt = f"""
+You are a Developer AI persona (v{self.persona_version}) - an expert Software Developer.
+
+Your task is to generate production-ready code scaffolding based on the following:
+
+## Requirements:
+{requirements[:1000]}...
+
+## Architecture:
+{architecture[:1000]}...
+
+## Implementation Plan:
+{plan[:1000]}...
+
+## Coding Standards:
+{coding_standards if coding_standards else "Follow Python PEP 8 / TypeScript best practices"}
+
+Generate:
+1. All necessary files (Python/TypeScript/JavaScript)
+2. Complete implementations (not just stubs)
+3. Proper error handling
+4. Type hints/annotations
+5. Docstrings/comments
+6. Basic unit tests
+
+Output format:
+For each file, use this structure:
+```filename: path/to/file.py
+[code content]
+```
+
+Generate complete, working code that follows the architecture and coding standards.
+Keep the code focused and concise.
+"""
+
+        # Configure generation settings
+        generation_config = {
+            'temperature': 0.7,
+            'top_p': 0.95,
+            'top_k': 40,
+            'max_output_tokens': 4096,
+        }
+
+        # Try primary model, fallback to lighter model if overloaded
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=generation_config
+            )
+        except Exception as e:
+            error_str = str(e).lower()
+            if "503" in str(e) or "overloaded" in error_str or "unavailable" in error_str:
+                print("   ⚠️  Primary model overloaded, trying fallback model (gemini-1.5-flash)...")
+                response = self.fallback_model.generate_content(
+                    prompt,
+                    generation_config=generation_config
+                )
+            else:
+                raise
+
+        # Parse response to extract files
+        files = {}
+
+        # Handle multi-part responses
+        try:
+            content = response.text
+        except ValueError:
+            # Response has multiple parts, concatenate them
+            content = ""
+            for candidate in response.candidates:
+                for part in candidate.content.parts:
+                    if hasattr(part, 'text'):
+                        content += part.text
+
+        # Simple parsing - look for ```filename: pattern
+        pattern = r'```filename:\s*(.+?)\n(.*?)```'
+        matches = re.findall(pattern, content, re.DOTALL)
+
+        for filename, code in matches:
+            files[filename.strip()] = code.strip()
+
+        # If no files found with filename pattern, try generic code blocks
+        if not files:
+            generic_pattern = r'```(?:python|typescript|javascript|tsx|jsx)?\n(.*?)```'
+            generic_matches = re.findall(generic_pattern, content, re.DOTALL)
+            for i, code in enumerate(generic_matches):
+                files[f'generated_code_{i}.py'] = code.strip()
+
+        return files
+
     def generate_api_endpoint(
         self,
         endpoint_spec: Dict[str, Any],
         framework: str = "fastapi"
     ) -> str:
         """Generate API endpoint code"""
-        
+
         prompt = f"""
 Generate a {framework} API endpoint with the following specification:
 

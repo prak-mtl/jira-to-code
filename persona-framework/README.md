@@ -52,7 +52,25 @@ python test_workflow.py
 
 ## Deployment
 
-See `deployment/cloud-run/` for GCP Cloud Run deployment instructions.
+### Local Development
+```bash
+python main.py
+# Or: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+### Google Cloud Run (Production)
+
+**Quick Deploy**:
+```bash
+cd persona-framework
+export GEMINI_API_KEY="your-api-key"
+./deploy-cloud-run.sh YOUR-PROJECT-ID europe-west1
+```
+
+**Documentation**:
+- **[CLOUD_RUN_QUICK_START.md](CLOUD_RUN_QUICK_START.md)** - 5-minute deployment guide
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Complete deployment documentation
+- **[API_USAGE_EXAMPLES.md](API_USAGE_EXAMPLES.md)** - Integration examples and API usage
 
 ## License
 
