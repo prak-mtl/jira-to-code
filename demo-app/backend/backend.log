@@ -1,0 +1,21 @@
+INFO:     Started server process [72285]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:64669 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64671 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64673 - "GET /metrics/commit_frequency?team_id=demo-team&start_date=2025-11-11T01%3A05%3A41.530308&end_date=2025-11-18T01%3A05%3A41.530308 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64675 - "GET /metrics/pr_analytics?team_id=demo-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64677 - "GET /metrics/pr_velocity?team_id=demo-team&start_date=2025-10-19T01%3A05%3A41.536088&end_date=2025-11-18T01%3A05%3A41.536088 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64705 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-18T19:35:59.224Z&end_date=2025-11-17T19:35:59.224Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64708 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64709 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-18T19:35:59.229Z&end_date=2025-11-17T19:35:59.229Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64708 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51155 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-19T01:56:08.207Z&end_date=2025-11-18T01:56:08.207Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51156 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51157 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-19T01:56:08.211Z&end_date=2025-11-18T01:56:08.211Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51159 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51690 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-19T02:15:45.995Z&end_date=2025-11-18T02:15:45.995Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51693 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51694 - "GET /metrics/commit_frequency?team_id=default-team&start_date=2025-10-19T02:15:45.998Z&end_date=2025-11-18T02:15:45.998Z HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51694 - "GET /metrics/pr_analytics?team_id=default-team HTTP/1.1" 200 OK

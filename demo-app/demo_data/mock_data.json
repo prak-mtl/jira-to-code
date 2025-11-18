@@ -1,0 +1,348 @@
+{
+  "commit_activity": [
+    {
+      "date": "2024-11-01T00:00:00Z",
+      "count": 12,
+      "authors": ["alice", "bob", "charlie"]
+    },
+    {
+      "date": "2024-11-02T00:00:00Z",
+      "count": 8,
+      "authors": ["alice", "david"]
+    },
+    {
+      "date": "2024-11-03T00:00:00Z",
+      "count": 0,
+      "authors": []
+    },
+    {
+      "date": "2024-11-04T00:00:00Z",
+      "count": 15,
+      "authors": ["alice", "bob", "charlie", "david"]
+    },
+    {
+      "date": "2024-11-05T00:00:00Z",
+      "count": 18,
+      "authors": ["alice", "bob", "charlie", "eve"]
+    },
+    {
+      "date": "2024-11-06T00:00:00Z",
+      "count": 22,
+      "authors": ["alice", "bob", "charlie", "david", "eve"]
+    },
+    {
+      "date": "2024-11-07T00:00:00Z",
+      "count": 14,
+      "authors": ["bob", "charlie", "david"]
+    },
+    {
+      "date": "2024-11-08T00:00:00Z",
+      "count": 10,
+      "authors": ["alice", "eve"]
+    },
+    {
+      "date": "2024-11-09T00:00:00Z",
+      "count": 0,
+      "authors": []
+    },
+    {
+      "date": "2024-11-10T00:00:00Z",
+      "count": 0,
+      "authors": []
+    },
+    {
+      "date": "2024-11-11T00:00:00Z",
+      "count": 16,
+      "authors": ["alice", "bob", "charlie", "david"]
+    },
+    {
+      "date": "2024-11-12T00:00:00Z",
+      "count": 20,
+      "authors": ["alice", "bob", "charlie", "david", "eve"]
+    },
+    {
+      "date": "2024-11-13T00:00:00Z",
+      "count": 19,
+      "authors": ["alice", "bob", "charlie", "eve"]
+    },
+    {
+      "date": "2024-11-14T00:00:00Z",
+      "count": 13,
+      "authors": ["alice", "david", "eve"]
+    },
+    {
+      "date": "2024-11-15T00:00:00Z",
+      "count": 11,
+      "authors": ["bob", "charlie"]
+    },
+    {
+      "date": "2024-11-16T00:00:00Z",
+      "count": 0,
+      "authors": []
+    },
+    {
+      "date": "2024-11-17T00:00:00Z",
+      "count": 0,
+      "authors": []
+    }
+  ],
+  "pr_metrics": {
+    "average_time_to_merge": 18.5,
+    "average_review_time": 6.2,
+    "approval_rate": 92.5,
+    "pr_size_distribution": {
+      "small": 45,
+      "medium": 32,
+      "large": 18,
+      "xlarge": 5
+    }
+  },
+  "pull_requests": [
+    {
+      "id": "pr-1",
+      "number": 123,
+      "title": "Add user authentication feature",
+      "state": "merged",
+      "author": "alice",
+      "created_at": "2024-11-10T10:00:00Z",
+      "updated_at": "2024-11-12T14:30:00Z",
+      "merged_at": "2024-11-12T14:30:00Z",
+      "url": "https://github.com/example/repo/pull/123",
+      "repository": "example/repo",
+      "additions": 450,
+      "deletions": 120,
+      "changed_files": 12,
+      "review_comments": 8,
+      "reviews": [
+        {
+          "id": "rev-1",
+          "user": "bob",
+          "state": "approved",
+          "submitted_at": "2024-11-11T16:00:00Z"
+        },
+        {
+          "id": "rev-2",
+          "user": "charlie",
+          "state": "approved",
+          "submitted_at": "2024-11-12T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "pr-2",
+      "number": 124,
+      "title": "Fix bug in payment processing",
+      "state": "merged",
+      "author": "bob",
+      "created_at": "2024-11-11T09:00:00Z",
+      "updated_at": "2024-11-11T15:00:00Z",
+      "merged_at": "2024-11-11T15:00:00Z",
+      "url": "https://github.com/example/repo/pull/124",
+      "repository": "example/repo",
+      "additions": 85,
+      "deletions": 42,
+      "changed_files": 3,
+      "review_comments": 2,
+      "reviews": [
+        {
+          "id": "rev-3",
+          "user": "alice",
+          "state": "approved",
+          "submitted_at": "2024-11-11T14:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "pr-3",
+      "number": 125,
+      "title": "Refactor database queries for performance",
+      "state": "open",
+      "author": "charlie",
+      "created_at": "2024-11-14T11:00:00Z",
+      "updated_at": "2024-11-16T10:00:00Z",
+      "url": "https://github.com/example/repo/pull/125",
+      "repository": "example/repo",
+      "additions": 320,
+      "deletions": 280,
+      "changed_files": 8,
+      "review_comments": 15,
+      "reviews": [
+        {
+          "id": "rev-4",
+          "user": "david",
+          "state": "changes_requested",
+          "submitted_at": "2024-11-15T14:00:00Z"
+        }
+      ]
+    }
+  ],
+  "sprints": [
+    {
+      "sprint_id": "sprint-1",
+      "name": "Sprint 23",
+      "team_id": "default-team",
+      "start_date": "2024-10-28T00:00:00Z",
+      "end_date": "2024-11-10T23:59:59Z",
+      "capacity": 80,
+      "completed_points": 75,
+      "status": "completed"
+    },
+    {
+      "sprint_id": "sprint-2",
+      "name": "Sprint 24",
+      "team_id": "default-team",
+      "start_date": "2024-11-11T00:00:00Z",
+      "end_date": "2024-11-24T23:59:59Z",
+      "capacity": 85,
+      "completed_points": 52,
+      "status": "active"
+    }
+  ],
+  "sprint_velocity": [
+    {
+      "sprint_name": "Sprint 18",
+      "planned_points": 70,
+      "completed_points": 65,
+      "velocity": 92.9
+    },
+    {
+      "sprint_name": "Sprint 19",
+      "planned_points": 75,
+      "completed_points": 72,
+      "velocity": 96.0
+    },
+    {
+      "sprint_name": "Sprint 20",
+      "planned_points": 78,
+      "completed_points": 70,
+      "velocity": 89.7
+    },
+    {
+      "sprint_name": "Sprint 21",
+      "planned_points": 80,
+      "completed_points": 78,
+      "velocity": 97.5
+    },
+    {
+      "sprint_name": "Sprint 22",
+      "planned_points": 82,
+      "completed_points": 80,
+      "velocity": 97.6
+    },
+    {
+      "sprint_name": "Sprint 23",
+      "planned_points": 80,
+      "completed_points": 75,
+      "velocity": 93.8
+    }
+  ],
+  "ai_insights": [
+    {
+      "insight_id": "insight-1",
+      "category": "productivity_pattern",
+      "title": "Peak Productivity on Tuesdays and Wednesdays",
+      "description": "Analysis shows that the team commits 35% more code on Tuesdays and Wednesdays compared to other weekdays. This pattern has been consistent over the last 6 weeks.",
+      "severity": "info",
+      "recommendations": [
+        "Schedule important code reviews on Tuesday/Wednesday when team is most productive",
+        "Consider moving team meetings to Monday or Thursday to preserve high-productivity days",
+        "Plan complex feature work to start on Monday for Tuesday/Wednesday implementation"
+      ],
+      "generated_at": "2024-11-17T10:00:00Z",
+      "team_id": "default-team"
+    },
+    {
+      "insight_id": "insight-2",
+      "category": "bottleneck_detection",
+      "title": "Code Review Delays Detected",
+      "description": "Pull requests are waiting an average of 18 hours for initial review. 23% of PRs wait more than 24 hours before receiving any feedback, which is above the team's target of 8 hours.",
+      "severity": "warning",
+      "recommendations": [
+        "Implement a PR review rotation schedule to ensure timely reviews",
+        "Set up automated reminders for PRs pending review for more than 12 hours",
+        "Consider breaking large PRs into smaller, more reviewable chunks",
+        "Allocate dedicated time slots for code review in daily schedules"
+      ],
+      "generated_at": "2024-11-17T10:00:00Z",
+      "team_id": "default-team"
+    },
+    {
+      "insight_id": "insight-3",
+      "category": "team_health",
+      "title": "Uneven Workload Distribution",
+      "description": "Two team members (Alice and Bob) are contributing 65% of all commits and handling 70% of code reviews. This concentration may lead to burnout and knowledge silos.",
+      "severity": "warning",
+      "recommendations": [
+        "Redistribute work more evenly across team members",
+        "Pair programming sessions to share knowledge and reduce silos",
+        "Encourage other team members to take on more review responsibilities",
+        "Provide mentoring opportunities for less active contributors"
+      ],
+      "generated_at": "2024-11-17T10:00:00Z",
+      "team_id": "default-team"
+    },
+    {
+      "insight_id": "insight-4",
+      "category": "productivity_pattern",
+      "title": "Sprint Velocity Trending Upward",
+      "description": "Team velocity has increased by 12% over the last 4 sprints, from an average of 70 points to 78 points. This improvement correlates with reduced PR review times.",
+      "severity": "info",
+      "recommendations": [
+        "Continue current practices that are driving velocity improvements",
+        "Document successful processes for onboarding new team members",
+        "Consider slightly increasing sprint capacity to match improved velocity",
+        "Celebrate team success and maintain momentum"
+      ],
+      "generated_at": "2024-11-17T10:00:00Z",
+      "team_id": "default-team"
+    }
+  ],
+  "contributors": [
+    {
+      "username": "alice",
+      "name": "Alice Johnson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1",
+      "commits": 145,
+      "pull_requests": 28,
+      "reviews": 42,
+      "score": 215
+    },
+    {
+      "username": "bob",
+      "name": "Bob Smith",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2",
+      "commits": 132,
+      "pull_requests": 25,
+      "reviews": 38,
+      "score": 195
+    },
+    {
+      "username": "charlie",
+      "name": "Charlie Davis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3",
+      "commits": 98,
+      "pull_requests": 18,
+      "reviews": 22,
+      "score": 138
+    },
+    {
+      "username": "david",
+      "name": "David Wilson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4",
+      "commits": 87,
+      "pull_requests": 15,
+      "reviews": 28,
+      "score": 130
+    },
+    {
+      "username": "eve",
+      "name": "Eve Martinez",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5",
+      "commits": 76,
+      "pull_requests": 12,
+      "reviews": 18,
+      "score": 106
+    }
+  ]
+}
+
