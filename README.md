@@ -104,28 +104,8 @@ This demo app showcases how the framework generates:
 - AI: Google Gemini API
 - Deployment: Cloud Run
 
-## 📊 Current Status
 
-✅ **COMPLETE** - Core framework ready for testing
-- All 5 AI personas implemented
-- Workflow orchestrator with 5 approval gates
-- Context bootstrap system
-- FastAPI REST API service
-- Demo app requirements document
-- End-to-end test script
-- Setup automation
-
-See **[PROJECT_STATUS.md](PROJECT_STATUS.md)** for detailed status.
-
-## 🎯 Next Steps
-
-1. ✅ Test framework with demo app requirements
-2. ⏳ Implement demo app backend (Hours 11-14)
-3. ⏳ Implement demo app frontend (Hours 14-16)
-4. ⏳ Deploy to Cloud Run (Hours 16-18)
-5. ⏳ Write blog post and create demo (Hours 18-24)
-
-## 🎤 Demo Talking Points
+## 🎤 Main Points
 
 1. **Problem**: Manual software development is slow and error-prone
 2. **Solution**: AI personas automate requirements → architecture → code → tests
